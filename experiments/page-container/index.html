@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Page Container Experiment</title>
+<link href="../../themes/default" rel="stylesheet" type="text/css">
+<script type="text/javascript" src="jqm-pagecontainer.php"></script>
+</head>
+
+<body>
+<div data-role="page">
+  <div data-role="content">
+    <div class="ui-grid-a">
+      <div class="ui-block-a">
+        <div id="container-topic" data-role="pagecontainer">
+          <div data-role="page">
+            <div data-role="header">
+              <h2>Topics</h2>
+            </div>
+            <div data-role="content">
+              <ul data-role="listview">
+                <li><a href="#topic-pages">Pages</a></li>
+                <li><a href="#topic-toolbars">Toolbars</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="topic-pages" data-role="page">
+            <div data-role="header">
+              <h3>Pages</h3>
+            </div>
+            <div data-role="content">
+              <ul data-role="listview" data-inset="true">
+                <li><a href="#" rel="#container-content">Page Overview</a></li>
+                <li><a href="#" rel="#container-content">Single Page Template</a></li>
+                <li><a href="#" rel="#container-content">Multip Page Template</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="topic-toolbars" data-role="page">
+            <div data-role="header">
+              <h3>Toolbars</h3>
+            </div>
+            <div data-role="content">
+              <ul data-role="listview">
+                <li><a href="#" rel="#container-content">Toolbar Overview</a></li>
+                <li><a href="#" rel="#container-content">Inline Header/Footer</a></li>
+                <li><a href="#" rel="#container-content">Fixed Header/Footer</a></li>
+                <li><a href="#" rel="#container-content">Full Screen</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ui-block-b">
+      <div id="container-content" data-role="pagecontainer">
+        <div data-role="page">
+          <div data-role="header">
+            <h2>Content</h2>
+          </div>
+          <div data-role="content">
+            <p>Poster Content</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
