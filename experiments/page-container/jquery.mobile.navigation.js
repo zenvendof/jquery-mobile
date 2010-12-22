@@ -11,6 +11,7 @@
 		$html = $('html'),
 		$head = $('head'),
 		origin = '',
+		hashListener = false,
 
 		//array of pages that are visited during a single page load
 		//length will grow as pages are visited, and shrink as "back" link/button is clicked
@@ -37,57 +38,14 @@
 	//    #<containerID>=<pageID>
 	//    #<containerID>=<pagePath>
 
-	function tokenizeLocationHash()
+	var defaultKeyStr = "__default__";
+
+	function getLocationHash()
 	{
-		// #foo$$container1=foo/bar/foo.html$$foo/bar&subPageUrlKey
-
-		hash = location.hash;
-		var tokens = [];
-		var cpaths = hash ? hash.split(/\$\$/) : [];
-
-		for (var i = 0; i < cpaths.length; i++)
-		{
-			var a = cpaths[i].split("=");
-			tokens.push({
-				container: (t.length < 2 ? "body" : t[0]),
-				url: (t.length > 1 ? t[1] : "")
-			});
-		}
-		return tokens;
+		return location.hash;
 	}
 
-	function findTokenForContainer(tokens, container)
-	{
-		container = container ? container : "body";
-		for (var i = 0; i < tokens.length; i++)
-		{
-			var t = tokens[i];
-			if (t.container == container)
-				return t;
-		}
-		return null;
-	}
-	
-	function getHashPathForContainer(container)
-	{
-		var t = findTokenForContainer(tokenizeLocationHash(hash), container);
-		return t ? t.url : "";
-	}
-
-	function setHashPathForContainer(container, url, disableListening)
-	{
-		container = container ? container : "body";
-		var tokens = tokenizeLocationHash(hash);
-		var t = findTokenForContainer(tokens, container);
-		if (!t) {
-			t = { container: container, url: url };
-			tokens.push(t);
-		}
-		t.url = url;
-		setLocationHash(tokens, disableListening);
-	}
-
-	function setLocationHash(hash, disableListening)
+	function setLocationHash(hash, disableListener)
 	{
 		if(disableListening) { hashListener = false; }
 
@@ -97,25 +55,86 @@
 			for (var i = 0; i < tokens.length; i++)
 			{
 				var t = tokens[i];
-				if (t.url)
-					hash.push((t.container != "body" ? t.container + "=" : "") + t.urll);
+				if (t.value)
+					hash.push((t.key != defaultKeyStr ? t.key + "=" : "") + t.valuel);
 			}
-			hash = hash.join("$$");
+			hash = hash.join($.mobile.locationHashSeparator);
 		}
 
 		location.hash = hash;
 	}
 
+	function getLocationHashKeyValue(key)
+	{
+		var t = findTokenForKey(tokenizeLocationHash(hash), key);
+		return t ? t.value : "";
+	}
+
+	function setLocationHashKeyValue(key, value, disableListener)
+	{
+		key = key ? key : defaultKeyStr;
+		var tokens = tokenizeLocationHash();
+		var t = findTokenForKey(tokens, key);
+		if (!t) {
+			t = { key: key, value: value };
+			tokens.push(t);
+			tokens.dict[key ? key : defaultKeyStr] = t;
+		}
+		t.value = value;
+		setLocationHash(tokens, disableListening);
+	}
+
+	function tokenizeLocationHash()
+	{
+		// Split the location.hash string into a series of key/value tokens.
+		// To remain backwards compatible, we allow a value to be specified
+		// without  a key. It is assumed that a value without a key is the
+		// id or path to the page that should be loaded within the body page
+		// container. All other paths must have a key.
+
+		hash = getLocationHash();
+		var tokens = [];
+		tokens.dict = {};
+		var cpaths = hash ? hash.split($.mobile.locationHashSeparator) : [];
+
+		for (var i = 0; i < cpaths.length; i++)
+		{
+			var a = cpaths[i].split("=");
+			var t = {
+				key: (a.length < 2 ? defaultKeyStr : a[0]),
+				value: (a.length > 1 ? a[1] : "")
+			}
+			tokens.push(t);
+			tokens.dict[t.key] = t;
+		}
+		return tokens;
+	}
+
+	function findTokenForKey(tokens, key)
+	{
+		return tokens.dict[key ? key : defaultKeyStr];
+	}
+	
 	function stripSubPageKey(newPath)
 	{
 		var splitkey = '&' + $.mobile.subPageUrlKey;
 		return path && path.indexOf( splitkey ) > -1 ? path.split( splitkey )[0] : path;
 	}
 
+	$.mobile.locationHashSeparator = "$$";
+	$.mobile.getLocationHash = getLocationHash;
+	$.mobile.setLocationHash = setLocationHash;
+	$.mobile.getLocationHashKeyValue = getLocationHashKeyValue;
+	$.mobile.setLocationHashKeyValue = setLocationHashKeyValue;
+
+	// XXX: Backwards compatibility. Either get rid of it, or rename setLocationHash().
+
+	$.mobile.updateHash = getLocationHash;
+
 	function getDirectoryFromPath(newPath)
 	{
 		if( newPath == undefined ){
-			newPath = location.hash;
+			newPath = getLocationHash();
 		}
 		newPath = newPath.replace(/#/,'').split('/');
 		if(newPath.length){
@@ -130,7 +149,7 @@
 	origin = getDirectoryFromPath( location.protocol + '//' + location.host + location.pathname );
 
 	$(document).bind("pagechanged", function(e,data) {
-		setHashPathForContainer(data.container, data.url, true);
+		setLocationHashValue(data.container, data.url, true);
 	});
 
 
@@ -165,42 +184,10 @@
 		//toggled internally when location.hash is updated to match the url of a successful page load
 		hashListener = true;
 
-`
+
 /*
 	internal utility functions
 --------------------------------------*/
-
-
-	//direct focus to the page title, or otherwise first focusable element
-	function reFocus( page ){
-		var pageTitle = page.find( ".ui-title:eq(0)" );
-		if( pageTitle.length ){
-			pageTitle.focus();
-		}
-		else{
-			page.find( focusable ).eq(0).focus();
-		}
-	};
-
-	//remove active classes after page transition or error
-	function removeActiveLinkClass( forceRemoval ){
-		if( !!$activeClickedLink && (!$activeClickedLink.closest( '.ui-page-active' ).length || forceRemoval )){
-			$activeClickedLink.removeClass( $.mobile.activeBtnClass );
-		}
-		$activeClickedLink = null;
-	};
-
-
-	//animation complete callback
-	$.fn.animationComplete = function( callback ){
-		if($.support.cssTransitions){
-			return $(this).one('webkitAnimationEnd', callback);
-		}
-		else{
-			callback();
-		}
-	};
-
 
 
 /* exposed $.mobile methods	 */
@@ -211,268 +198,7 @@
 	//url stack, useful when plugins need to be aware of previous pages viewed
 	$.mobile.urlStack = urlStack;
 
-	// changepage function
-	$.mobile.changePage = function( to, transition, back, changeHash){
-
-		//from is always the currently viewed page
-		var toIsArray = $.type(to) === "array",
-			from = toIsArray ? to[0] : $.mobile.activePage,
-			to = toIsArray ? to[1] : to,
-			url = fileUrl = $.type(to) === "string" ? to.replace( /^#/, "" ) : null,
-			data = undefined,
-			type = 'get',
-			isFormRequest = false,
-			duplicateCachedPage = null,
-			back = (back !== undefined) ? back : ( urlStack.length > 1 && urlStack[ urlStack.length - 2 ].url === url ),
-			transition = (transition !== undefined) ? transition : $.mobile.defaultTransition;
-
-
-		//If we are trying to transition to the same page that we are currently on ignore the request.
-		if(urlStack.length > 1 && url === urlStack[urlStack.length -1].url && !toIsArray ) {
-			return;
-		}
-
-
-		if( $.type(to) === "object" && to.url ){
-			url = to.url,
-			data = to.data,
-			type = to.type,
-			isFormRequest = true;
-			//make get requests bookmarkable
-			if( data && type == 'get' ){
-				url += "?" + data;
-				data = undefined;
-			}
-		}
-
-
-
-
-		//reset base to pathname for new request
-		if(base){ base.reset(); }
-
-		//kill the keyboard
-		$( window.document.activeElement ).add(':focus').blur();
-
-		// if the new href is the same as the previous one
-		if ( back ) {
-			var pop = urlStack.pop();
-			if( pop ){
-				transition = pop.transition;
-			}
-		} else {
-			urlStack.push({ url: url, transition: transition });
-		}
-
-		//function for transitioning between two existing pages
-		function transitionPages() {
-
-			//get current scroll distance
-			var currScroll = $window.scrollTop(),
-					perspectiveTransitions = ["flip"],
-          pageContainerClasses = [];
-
-			//set as data for returning to that spot
-			from.data('lastScroll', currScroll);
-
-			//trigger before show/hide events
-			from.data("page")._trigger("beforehide", {nextPage: to});
-			to.data("page")._trigger("beforeshow", {prevPage: from});
-
-			function loadComplete(){
-				$.mobile.pageLoading( true );
-
-				reFocus( to );
-
-				if( changeHash !== false && url ){
-					path.set(url, (back !== true));
-				}
-				removeActiveLinkClass();
-
-				//if there's a duplicateCachedPage, remove it from the DOM now that it's hidden
-				if( duplicateCachedPage != null ){
-					duplicateCachedPage.remove();
-				}
-
-				//jump to top or prev scroll, if set
-				$.mobile.silentScroll( to.data( 'lastScroll' ) );
-
-				//trigger show/hide events, allow preventing focus change through return false
-				from.data("page")._trigger("hide", null, {nextPage: to});
-				if( to.data("page")._trigger("show", null, {prevPage: from}) !== false ){
-					$.mobile.activePage = to;
-				}
-			};
-
-			function addContainerClass(className){
-				$.mobile.pageContainer.addClass(className);
-				pageContainerClasses.push(className);
-			};
-
-			function removeContainerClasses(){
-				$.mobile
-					.pageContainer
-					.removeClass(pageContainerClasses.join(" "));
-
-				pageContainerClasses = [];
-			};
-
-			if(transition && (transition !== 'none')){
-				if( perspectiveTransitions.indexOf(transition) >= 0 ){
-					addContainerClass('ui-mobile-viewport-perspective');
-				}
-
-				addContainerClass('ui-mobile-viewport-transitioning');
-
-				// animate in / out
-				from.addClass( transition + " out " + ( back ? "reverse" : "" ) );
-				to.addClass( $.mobile.activePageClass + " " + transition +
-					" in " + ( back ? "reverse" : "" ) );
-
-				// callback - remove classes, etc
-				to.animationComplete(function() {
-					from.add( to ).removeClass("out in reverse " + transition );
-					from.removeClass( $.mobile.activePageClass );
-					loadComplete();
-					removeContainerClasses();
-				});
-			}
-			else{
-				from.removeClass( $.mobile.activePageClass );
-				to.addClass( $.mobile.activePageClass );
-				loadComplete();
-			}
-		};
-
-		//shared page enhancements
-		function enhancePage(){
-
-			//set next page role, if defined
-			if ( nextPageRole || to.data('role') == 'dialog' ) {
-				changeHash = false;
-				if(nextPageRole){
-					to.attr( "data-role", nextPageRole );
-					nextPageRole = null;
-				}
-			}
-
-			//run page plugin
-			to.page();
-		};
-
-		//if url is a string
-		if( url ){
-			to = $( "[data-url='" + url + "']" );
-			fileUrl = path.getFilePath(url);
-		}
-		else{ //find base url of element, if avail
-			var toID = to.attr('data-url'),
-				toIDfileurl = path.getFilePath(toID);
-
-			if(toID != toIDfileurl){
-				fileUrl = toIDfileurl;
-			}
-		}
-
-		// find the "to" page, either locally existing in the dom or by creating it through ajax
-		if ( to.length && !isFormRequest ) {
-			if( fileUrl && base ){
-				base.set( fileUrl );
-			}
-			enhancePage();
-			transitionPages();
-		} else {
-
-			//if to exists in DOM, save a reference to it in duplicateCachedPage for removal after page change
-			if( to.length ){
-				duplicateCachedPage = to;
-			}
-
-			$.mobile.pageLoading();
-
-			$.ajax({
-				url: fileUrl,
-				type: type,
-				data: data,
-				success: function( html ) {
-					if(base){ base.set(fileUrl); }
-
-					var all = $("<div></div>");
-					//workaround to allow scripts to execute when included in page divs
-					all.get(0).innerHTML = html;
-					to = all.find('[data-role="page"], [data-role="dialog"]').first();
-
-					//rewrite src and href attrs to use a base url
-					if( !$.support.dynamicBaseTag ){
-						var newPath = path.get( fileUrl );
-						to.find('[src],link[href]').each(function(){
-							var thisAttr = $(this).is('[href]') ? 'href' : 'src',
-								thisUrl = $(this).attr(thisAttr);
-
-							//if full path exists and is same, chop it - helps IE out
-							thisUrl.replace( location.protocol + '//' + location.host + location.pathname, '' );
-
-							if( !/^(\w+:|#|\/)/.test(thisUrl) ){
-								$(this).attr(thisAttr, newPath + thisUrl);
-							}
-						});
-					}
-
-					to
-						.attr( "data-url", fileUrl )
-						.appendTo( $.mobile.pageContainer );
-
-					enhancePage();
-					transitionPages();
-				},
-				error: function() {
-					$.mobile.pageLoading( true );
-					removeActiveLinkClass(true);
-					base.set(path.get());
-					$("<div class='ui-loader ui-overlay-shadow ui-body-e ui-corner-all'><h1>Error Loading Page</h1></div>")
-						.css({ "display": "block", "opacity": 0.96, "top": $(window).scrollTop() + 100 })
-						.appendTo( $.mobile.pageContainer )
-						.delay( 800 )
-						.fadeOut( 400, function(){
-							$(this).remove();
-						});
-				}
-			});
-		}
-
-	};
-
-
 /* Event Bindings - hashchange, submit, and click */
-
-	//bind to form submit events, handle with Ajax
-	$('form').live('submit', function(event){
-		if( !$.mobile.ajaxFormsEnabled ){ return; }
-
-		var type = $(this).attr("method"),
-			url = $(this).attr( "action" ).replace( location.protocol + "//" + location.host, "");
-
-		//external submits use regular HTTP
-		if( /^(:?\w+:)/.test( url ) ){
-			return;
-		}
-
-		//if it's a relative href, prefix href with base url
-		if( url.indexOf('/') && url.indexOf('#') !== 0 ){
-			url = path.get() + url;
-		}
-
-		$.mobile.changePage({
-				url: url,
-				type: type,
-				data: $(this).serialize()
-			},
-			undefined,
-			undefined,
-			true
-		);
-		event.preventDefault();
-	});
 
 
 
@@ -480,6 +206,38 @@
 		if( !hashListener ){
 			hashListener = true;
 			return;
+		}
+
+		// XXX: Original code would bail if the active page was a dialog.
+		//      we need to figure out if we need to do the same here.
+		//
+		// if( $(".ui-page-active").is("[data-role=" + $.mobile.nonHistorySelectors + "]") ){
+		// 	return;
+		// }
+
+
+		var tkns = tokenizeLocationHash(),
+			tcnt = tkns.length,
+			transition = triggered ? false : undefined;
+
+		if (triggered || tcnt == 0)
+		{
+			$(".ui-pagecontainer").each(function(){
+				var $this = $(this);
+				var t = findTokenForKey(tkns, $this.is("body") ? defaultKeyStr : this.id);
+				$this.pagecontainer("changePage", t ? t.value : null, transition, false, false);
+			});
+		}
+		else
+		{
+			// The hash changed, run through all of the items listed in the location.hash
+			// and make sure the containers that are mentioned get updated.
+
+			for (var i = 0; i < tcnt; i++)
+			{
+				var t = tkns[i];
+				$(t.id == defaultKeyStr ? document.body : "#" + t.id).pagecontainer("changePage", t.value, transition, false, false);
+			}
 		}
 	});
 
