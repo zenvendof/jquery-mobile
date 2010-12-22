@@ -48,7 +48,10 @@ $.widget( "mobile.pagecontainer", $.mobile.widget, {
 
 		this._$activeLinkClicked = null;
 		this._$loader = null;
-		this._urlStack = [];
+		this._urlStack = [ {
+			url: $.mobile.getLocationHashKeyValue($container[0].id),
+			transition: undefined
+		} ];
 
 		if (this.options.loadingPageDelegate == "self")
 		{
@@ -207,9 +210,7 @@ $.widget( "mobile.pagecontainer", $.mobile.widget, {
 			type = 'get',
 			isFormRequest = false,
 			duplicateCachedPage = null,
-			back = (back !== undefined) ? back : ( urlStack.length > 1 && urlStack[ urlStack.length - 2 ].url === url ),
-			transition = (transition !== undefined) ? transition : $.mobile.defaultTransition;
-
+			back = (back !== undefined) ? back : ( urlStack.length > 1 && urlStack[ urlStack.length - 2 ].url === url );
 
 		//If we are trying to transition to the same page that we are currently on ignore the request.
 		if(urlStack.length > 1 && url === urlStack[urlStack.length -1].url && !toIsArray ) {
@@ -238,13 +239,28 @@ $.widget( "mobile.pagecontainer", $.mobile.widget, {
 		//kill the keyboard
 		$( window.document.activeElement ).add(':focus').blur();
 
+		function defaultTransition(){
+			if(transition === undefined){
+				transition = $.mobile.defaultTransition;
+			}
+		}
+
 		// if the new href is the same as the previous one
 		if ( back ) {
 			var pop = urlStack.pop();
-			if( pop ){
+
+			// prefer the explicitly set transition
+			if( pop && !transition ){
 				transition = pop.transition;
 			}
+
+			// ensure a transition has been set where pop is undefined
+			defaultTransition();
 		} else {
+			// If no transition has been passed
+			defaultTransition();
+
+			// push the url and transition onto the stack
 			urlStack.push({ url: url, transition: transition });
 		}
 
