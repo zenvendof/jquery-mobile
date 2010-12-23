@@ -6,6 +6,13 @@
 */
 (function($, undefined ) {
 
+	//define first selector to receive focus when a page is shown
+var focusable = "[tabindex],a,button:visible,select:visible,input";
+
+	//contains role for next page, if defined on clicked link via data-rel
+	nextPageRole = null;
+
+
 // Framework Navigation
 //     - Location Hash Management
 //     - Ajax Loading
@@ -217,7 +224,6 @@ $.widget( "mobile.pagecontainer", $.mobile.widget, {
 			return;
 		}
 
-
 		if( $.type(to) === "object" && to.url ){
 			url = to.url,
 			data = to.data,
@@ -229,9 +235,6 @@ $.widget( "mobile.pagecontainer", $.mobile.widget, {
 				data = undefined;
 			}
 		}
-
-
-
 
 		//reset base to pathname for new request
 		if(base){ base.reset(); }

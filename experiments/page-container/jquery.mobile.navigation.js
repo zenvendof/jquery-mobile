@@ -10,8 +10,8 @@
 	var $window = $(window),
 		$html = $('html'),
 		$head = $('head'),
-		origin = '',
-		hashListener = false,
+		origin = getDirectoryFromPath( location.protocol + '//' + location.host + location.pathname ),
+		hashListener = true,
 
 		//array of pages that are visited during a single page load
 		//length will grow as pages are visited, and shrink as "back" link/button is clicked
@@ -72,13 +72,13 @@
 
 	function setLocationHashKeyValue(key, value, disableListener)
 	{
-		key = key ? key : defaultKeyStr;
+		key = key || defaultKeyStr;
 		var tokens = tokenizeLocationHash();
 		var t = findTokenForKey(tokens, key);
 		if (!t) {
 			t = { key: key, value: value };
 			tokens.push(t);
-			tokens.dict[key ? key : defaultKeyStr] = t;
+			tokens.dict[key || defaultKeyStr] = t;
 		}
 		t.value = value;
 		setLocationHash(tokens, disableListening);
@@ -112,7 +112,7 @@
 
 	function findTokenForKey(tokens, key)
 	{
-		return tokens.dict[key ? key : defaultKeyStr];
+		return tokens.dict[key || defaultKeyStr];
 	}
 	
 	function stripSubPageKey(newPath)
@@ -120,16 +120,6 @@
 		var splitkey = '&' + $.mobile.subPageUrlKey;
 		return path && path.indexOf( splitkey ) > -1 ? path.split( splitkey )[0] : path;
 	}
-
-	$.mobile.locationHashSeparator = "$$";
-	$.mobile.getLocationHash = getLocationHash;
-	$.mobile.setLocationHash = setLocationHash;
-	$.mobile.getLocationHashKeyValue = getLocationHashKeyValue;
-	$.mobile.setLocationHashKeyValue = setLocationHashKeyValue;
-
-	// XXX: Backwards compatibility. Either get rid of it, or rename setLocationHash().
-
-	$.mobile.updateHash = getLocationHash;
 
 	function getDirectoryFromPath(newPath)
 	{
@@ -146,44 +136,21 @@
 		return newPath.join('/') + (newPath.length ? '/' : '');
 	}
 
-	origin = getDirectoryFromPath( location.protocol + '//' + location.host + location.pathname );
-
-	$(document).bind("pagechanged", function(e,data) {
-		setLocationHashValue(data.container, data.url, true);
-	});
-
-
 //***********************
 
-		//base element management, defined depending on dynamic base tag support
-		var base = $.support.dynamicBaseTag ? {
+	var baseElement = $.support.dynamicBaseTag ? $("<base>", { href: origin }).prependTo( $head ) : null;
 
-			//define base element, for use in routing asset urls that are referenced in Ajax-requested markup
-			element: $("<base>", { href: path.origin }).prependTo( $head ),
+	$.mobile.setBase = function(href)
+	{
+		if (baseElement)
+			baseElement.attr('href', origin + getDirectoryFromPath(href));
+	};
 
-			//set the generated BASE element's href attribute to a new page's base path
-			set: function( href ){
-				base.element.attr('href', path.origin + path.get( href ));
-			},
-
-			//set the generated BASE element's href attribute to a new page's base path
-			reset: function(){
-				base.element.attr('href', path.origin );
-			}
-
-		} : undefined,
-
-
-		//define first selector to receive focus when a page is shown
-		focusable = "[tabindex],a,button:visible,select:visible,input",
-
-		//contains role for next page, if defined on clicked link via data-rel
-		nextPageRole = null,
-
-		//enable/disable hashchange event listener
-		//toggled internally when location.hash is updated to match the url of a successful page load
-		hashListener = true;
-
+	$.mobile.resetBase = function()
+	{
+		if (baseElement)
+			baseElement.attr('href', origin);
+	};
 
 /*
 	internal utility functions
@@ -192,15 +159,22 @@
 
 /* exposed $.mobile methods	 */
 
-	//update location.hash, with or without triggering hashchange event
-	$.mobile.updateHash = path.set;
 
-	//url stack, useful when plugins need to be aware of previous pages viewed
-	$.mobile.urlStack = urlStack;
+	$.mobile.locationHashSeparator = "$$";
+	$.mobile.getLocationHash = getLocationHash;
+	$.mobile.setLocationHash = setLocationHash;
+	$.mobile.getLocationHashKeyValue = getLocationHashKeyValue;
+	$.mobile.setLocationHashKeyValue = setLocationHashKeyValue;
+
+	// XXX: Backwards compatibility. Either get rid of it, or rename setLocationHash().
+
+	$.mobile.updateHash = getLocationHash;
 
 /* Event Bindings - hashchange, submit, and click */
 
-
+	$(document).bind("pagechanged", function(e,data) {
+		setLocationHashValue(data.container, data.url, true);
+	});
 
 	$window.bind( "hashchange", function(e, triggered) {
 		if( !hashListener ){
@@ -222,6 +196,17 @@
 
 		if (triggered || tcnt == 0)
 		{
+			/* XXX: We still need to figure out how to handle this case!
+
+			$.mobile.startPage.trigger("pagebeforeshow", {prevPage: $('')});
+			$.mobile.startPage.addClass( $.mobile.activePageClass );
+			$.mobile.pageLoading( true );
+
+			if( $.mobile.startPage.trigger("pageshow", {prevPage: $('')}) !== false ){
+				reFocus($.mobile.startPage);
+			}
+			*/
+
 			$(".ui-pagecontainer").each(function(){
 				var $this = $(this);
 				var t = findTokenForKey(tkns, $this.is("body") ? defaultKeyStr : this.id);
@@ -241,38 +226,4 @@
 		}
 	});
 
-	//hashchange event handler
-	$window.bind( "hashchange", function(e, triggered) {
-		if( !hashListener ){
-			hashListener = true;
-			return;
-		}
-
-		if( $(".ui-page-active").is("[data-role=" + $.mobile.nonHistorySelectors + "]") ){
-			return;
-		}
-
-		var to = location.hash,
-			transition = triggered ? false : undefined;
-
-		//if to is defined, use it
-		if ( to ){
-			$.mobile.changePage( to, transition, undefined, false);
-		}
-		//there's no hash, the active page is not the start page, and it's not manually triggered hashchange
-		//we probably backed out to the first page visited
-		else if( $.mobile.activePage.length && $.mobile.startPage[0] !== $.mobile.activePage[0] && !triggered ) {
-			$.mobile.changePage( $.mobile.startPage, transition, true, false );
-		}
-		//probably the first page - show it
-		else{
-			$.mobile.startPage.trigger("pagebeforeshow", {prevPage: $('')});
-			$.mobile.startPage.addClass( $.mobile.activePageClass );
-			$.mobile.pageLoading( true );
-
-			if( $.mobile.startPage.trigger("pageshow", {prevPage: $('')}) !== false ){
-				reFocus($.mobile.startPage);
-			}
-		}
-	});
 })(jQuery, window, document);
