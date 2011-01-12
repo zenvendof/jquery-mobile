@@ -47,8 +47,6 @@ $.widget( "mobile.page", $.mobile.widget, {
 
 		$elem.find( "[data-role='nojs']" ).addClass( "ui-nojs" );
 
-		this._enchanceControls();
-
 		// pre-find data els
 		var $dataEls = $elem.find( "[data-role]" ).andSelf().each(function() {
 			var $this = $( this ),
@@ -78,7 +76,7 @@ $.widget( "mobile.page", $.mobile.widget, {
 				// auto-add back btn on pages beyond first view
 				if ( o.addBackBtn && role === "header" &&
 						($.mobile.urlStack.length > 1 || $(".ui-page").length > 1) &&
-						!leftbtn && !$this.data( "noBackBtn" ) ) {
+						!leftbtn && $this.data( "backbtn" ) !== false ) {
 
 					$( "<a href='#' class='ui-btn-left' data-icon='arrow-l'>"+ o.backBtnText +"</a>" )
 						.click(function() {
@@ -122,6 +120,9 @@ $.widget( "mobile.page", $.mobile.widget, {
 					break;
 			}
 		});
+		
+		//enhance form controls
+  	this._enhanceControls();
 
 		//links in bars, or those with data-role become buttons
 		$elem.find( "[data-role='button'], .ui-bar > a, .ui-header > a, .ui-footer > a" )
@@ -142,7 +143,7 @@ $.widget( "mobile.page", $.mobile.widget, {
 		$elem.fixHeaderFooter();
 	},
 
-	_enchanceControls: function() {
+	_enhanceControls: function() {
 		var o = this.options;
 
 		// degrade inputs to avoid poorly implemented native functionality
@@ -170,7 +171,7 @@ $.widget( "mobile.page", $.mobile.widget, {
 
 		this.element
 			.find( "input, textarea" )
-			.not( "[type='radio'], [type='checkbox'], button, [type='button'], [type='submit'], [type='reset'], [type='image']" )
+			.not( "[type='radio'], [type='checkbox'], button, [type='button'], [type='submit'], [type='reset'], [type='image'], [type='hidden']" )
 			.not(this.keepNative)
 			.textinput();
 

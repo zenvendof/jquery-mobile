@@ -17,28 +17,33 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 		iconshadow: true,
 		menuPageTheme: 'b',
 		overlayTheme: 'a',
-		hidePlaceholderMenuItems: true
+		hidePlaceholderMenuItems: true,
+		closeText: 'Close'
 	},
 	_create: function(){
 	
 		var self = this,
-		
+			
 			o = this.options,
 			
 			select = this.element
 						.attr( "tabindex", "-1" )
-						.wrap( "<div class='ui-select'>" ),		
+						.wrap( "<div class='ui-select'>" ),
 							
 			selectID = select.attr( "id" ),
 			
+			isMultiple = self.isMultiple = select[0].multiple,
+			
+			options = select.find("option"),
+			
 			label = $( "label[for="+ selectID +"]" ).addClass( "ui-select" ),
-									
+			
 			buttonId = selectID + "-button",
 			
 			menuId = selectID + "-menu",
 			
 			thisPage = select.closest( ".ui-page" ),
-				
+			
 			button = $( "<a>", { 
 					"href": "#",
 					"role": "button",
@@ -57,7 +62,7 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 					shadow: o.shadow,
 					iconshadow: o.iconshadow
 				}),
-				
+			
 			theme = /ui-btn-up-([a-z])/.exec( button.attr("class") )[1],
 				
 			menuPage = $( "<div data-role='dialog' data-theme='"+ o.menuPageTheme +"'>" +
@@ -69,7 +74,9 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 					.appendTo( $.mobile.pageContainer )
 					.page(),	
 					
-			menuPageContent = menuPage.find( ".ui-content" ),	
+			menuPageContent = menuPage.find( ".ui-content" ),
+			
+			menuPageClose = menuPage.find( ".ui-header a" ),
 					
 			screen = $( "<div>", {"class": "ui-selectmenu-screen ui-screen-hidden"})
 						.appendTo( thisPage ),		
@@ -85,12 +92,38 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 					"data-theme": theme
 				})
 				.appendTo( listbox ),
-				
-			menuType;	
 			
-		//expose to other methods	
+			header = $( "<div>", {
+					"data-role": "header",
+					"data-backbtn": false
+				})
+				.prependTo( listbox ),
+				
+			headerTitle = $( "<h1>" )
+				.appendTo( header ),
+				
+			headerClose = $( "<a>", {
+					"data-iconpos": "notext",
+					"data-icon": "delete",
+					"text": o.closeText,
+					"href": "#"
+				})
+				.appendTo( header ),
+				
+			menuType;
+		
+		// add counter for multi selects
+		if( isMultiple ){
+			self.buttonCount = $('<span>')
+				.addClass( 'ui-li-count ui-btn-up-c ui-btn-corner-all' )
+				.hide()
+				.appendTo( button );
+		}
+		
+		//expose to other methods
 		$.extend(self, {
 			select: select,
+			options: options,
 			selectID: selectID,
 			label: label,
 			buttonId:buttonId,
@@ -102,15 +135,18 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 			screen:screen,
 			listbox:listbox,
 			list:list,
-			menuType:menuType
+			menuType:menuType,
+			header:header,
+			headerClose:headerClose,
+			headerTitle:headerTitle,
+			placeholder: ''
 		});
-					
 		
 		//create list from select, update state
 		self.refresh();
 		
 		//disable if specified
-		if( this.options.disabled ){ this.disable(); }
+		if( o.disabled ){ this.disable(); }
 
 		//events on native select
 		select
@@ -120,7 +156,7 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 			.focus(function(){
 				$(this).blur();
 				button.focus();
-			});		
+			});
 		
 		//button events
 		button.bind( $.support.touch ? "touchstart" : "click", function(event){
@@ -130,42 +166,64 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 		
 		//events for list items
 		list.delegate("li:not(.ui-disabled, .ui-li-divider)", "click", function(event){
-				//update select	
-				var newIndex = list.find( "li:not(.ui-li-divider)" ).index( this ),
-					prevIndex = select[0].selectedIndex;
+			
+			// clicking on the list item fires click on the link in listview.js.
+			// to prevent this handler from firing twice if the link isn't clicked on,
+			// short circuit unless the target is the link
+			if( !$(event.target).is("a") ){ return; }
 
-				select[0].selectedIndex = newIndex;
-				
-				//trigger change event
-				if(newIndex !== prevIndex){ 
-					select.trigger( "change" ); 
-				}
-				
-				self.refresh();
-				
-				//hide custom select
+			// index of option tag to be selected 
+			var newIndex = list.find( "li:not(.ui-li-divider)" ).index( this ),
+				option = self.options.eq( newIndex )[0];
+			
+			// toggle selected status on the tag for multi selects
+			option.selected = isMultiple ? !option.selected : true;
+			
+			// toggle checkbox class for multiple selects
+			if( isMultiple ){
+				$(this)
+					.find('.ui-icon')
+					.toggleClass('ui-icon-checkbox-on', option.selected)
+					.toggleClass('ui-icon-checkbox-off', !option.selected);
+			}
+			
+			// trigger change
+			select.trigger( "change" ); 
+			
+			//hide custom select for single selects only
+			if( !isMultiple ){
 				self.close();
-				event.preventDefault();
-			});	
-	
-		//events on "screen" overlay
-		screen.click(function(event){
+			}
+			
+			event.preventDefault();
+		});
+		
+		//events on "screen" overlay + close button
+		screen.add( headerClose ).add( menuPageClose ).click(function(event){
 			self.close();
 			event.preventDefault();
+			
+			// if the dialog's close icon was clicked, prevent the dialog's close
+			// handler from firing. selectmenu's should take precedence
+			if( $.contains(menuPageClose[0], event.target) ){
+				event.stopImmediatePropagation();
+			}
 		});
 	},
 	
 	_buildList: function(){
 		var self = this, 
 			optgroups = [],
-			o = this.options;
+			o = this.options,
+			placeholder = this.placeholder;
 		
 		self.list.empty().filter('.ui-listview').listview('destroy');
 		
 		//populate menu with options from select element
 		self.select.find( "option" ).each(function( i ){
 			var $this = $(this),
-				$parent = $this.parent();
+				$parent = $this.parent(),
+				text = $this.text();
 			
 			// are we inside an optgroup?
 			if( $parent.is("optgroup") ){
@@ -173,57 +231,113 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 				
 				// has this optgroup already been built yet?
 				if( $.inArray(optLabel, optgroups) === -1 ){
-					var optgroup = $('<li data-role="list-divider"></li>')
-						.text( optLabel )
-						.appendTo( self.list );
+					$("<li>", {
+						"data-role":"list-divider",
+						"text": optLabel
+					}).appendTo( self.list );
 					
 					optgroups.push( optLabel );
 				}
 			}
-
+			
 			var anchor = $("<a>", { 
-				"role": "option", 
+				"role": "", 
 				"href": "#",
-				"text": $(this).text()
+				"text": text
 			}),
 		
-			item = $( "<li>", {"data-icon": "checkbox-on"});
+			item = $( "<li>", { "data-icon": false });
+			
+			if( !this.getAttribute('value') || text.length == 0 || $this.data('placeholder') ){
+				if( o.hidePlaceholderMenuItems ){
+					item.addClass('ui-selectmenu-placeholder');
+				}
+				
+				placeholder = self.placeholder = text;
+			}
+		
+			// multiple select defaults
+			if( self.isMultiple ){
+				item.data('icon', 'checkbox-off');
+			}
 			
 			// support disabled option tags
 			if( this.disabled ){
-				item
-					.addClass("ui-disabled")
+				item.addClass("ui-disabled")
 					.attr("aria-disabled", true);
 			}
 			
-			if( o.hidePlaceholderMenuItems ){
-				if( !this.getAttribute('value') || $(this).text().length == 0 || $(this).data('placeholder')){
-					item.addClass('ui-selectmenu-placeholder');
-				}
-			}
-
 			item
 				.append( anchor )
 				.appendTo( self.list );
 		});
 		
+		// hide header close link for single selects
+		if( !this.isMultiple ){
+			this.headerClose.hide();
+		}
+		
+		// hide header if it's not a multiselect and there's no placeholder
+		if( !this.isMultiple && !placeholder.length ){
+			this.header.hide();
+		} else {
+			this.headerTitle.text( this.placeholder );
+		}
+		
 		//now populated, create listview
-		self.list.listview();		
+		self.list.listview();
 	},
 	
 	refresh: function( forceRebuild ){
 		var self = this,
 			select = this.element,
-			selected = select[0].selectedIndex;
+			isMultiple = this.isMultiple,
+			options = this.options = select.find("option"),
+			selected = options.filter(":selected"),
+			
+			// return an array of all selected index's
+			indicies = selected.map(function(){
+				return options.index( this );
+			}).get();
 		
 		if( forceRebuild || select[0].options.length > self.list.find('li').length ){
 			self._buildList();
-		}	
-			
-		self.button.find( ".ui-btn-text" ).text( $(select[0].options.item(selected)).text() ); 
+		}
+		
+		self.button
+			.find( ".ui-btn-text" )
+			.text(function(){
+				if( !isMultiple ){
+					return selected.text();
+				}
+				
+				return selected.length ?
+					selected.map(function(){ return $(this).text(); }).get().join(', ') :
+					self.placeholder;
+			});
+		
+		// multiple count inside button
+		if( isMultiple ){
+			self.buttonCount[ selected.length > 1 ? 'show' : 'hide' ]().text( selected.length );
+		}
+		
 		self.list
-			.find('li:not(.ui-li-divider)').removeClass( $.mobile.activeBtnClass ).attr('aria-selected', false)
-			.eq(selected).addClass( $.mobile.activeBtnClass ).find('a').attr('aria-selected', true);		
+			.find( 'li:not(.ui-li-divider)' )
+			.removeClass( $.mobile.activeBtnClass )
+			.attr( 'aria-selected', false )
+			.each(function( i ){
+				if( $.inArray(i, indicies) > -1 ){
+					var item = $(this).addClass( $.mobile.activeBtnClass );
+					
+					// aria selected attr
+					item.find( 'a' ).attr( 'aria-selected', true );
+					
+					// multiple selects: add the "on" checkbox state to the icon
+					if( isMultiple ){
+						item.find('.ui-icon').removeClass('ui-icon-checkbox-off').addClass('ui-icon-checkbox-on');
+					}
+				}
+			});
 	},
 	
 	open: function(){
@@ -288,6 +402,7 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 		function focusButton(){
 			setTimeout(function(){
 				self.button.focus();
+				
 				//remove active class from button
 				self.button.removeClass( $.mobile.activeBtnClass );
 			}, 40);
@@ -295,12 +410,9 @@ $.widget( "mobile.selectmenu", $.mobile.widget, {
 			self.listbox.removeAttr('style').append( self.list );
 		}
 		
-		if(self.menuType == "page"){			
+		if(self.menuType == "page"){
 			$.mobile.changePage([self.menuPage,self.thisPage], 'pop', true, false);
-			self.menuPage.one("pagehide",function(){
-				focusButton();
-				//return false;
-			});
+			self.menuPage.one("pagehide", focusButton);
 		}
 		else{
 			self.screen.addClass( "ui-screen-hidden" );

@@ -11,13 +11,18 @@ $.widget( "mobile.checkboxradio", $.mobile.widget, {
 	},
 	_create: function(){
 		var input = this.element,
-			label = $("label[for='" + input.attr( "id" ) + "']"),
+			label = input.closest("form,fieldset,[data-role='page']").find("label[for='" + input.attr( "id" ) + "']"),
 			inputtype = input.attr( "type" ),
 			checkedicon = "ui-icon-" + inputtype + "-on",
 			uncheckedicon = "ui-icon-" + inputtype + "-off";
 
 		if ( inputtype != "checkbox" && inputtype != "radio" ) { return; }
-						
+
+		// If there's no selected theme...
+		if( !this.options.theme ) {
+			this.options.theme = this.element.data( "theme" );
+		}
+
 		label
 			.buttonMarkup({
 				theme: this.options.theme,
@@ -71,7 +76,7 @@ $.widget( "mobile.checkboxradio", $.mobile.widget, {
 	
 	refresh: function( ){
 		var input = this.element,
-			label = $("label[for='" + input.attr( "id" ) + "']"),
+			label = input.closest("form,fieldset,[data-role='page']").find("label[for='" + input.attr( "id" ) + "']"),
 			inputtype = input.attr( "type" ),
 			icon = label.find( ".ui-icon" ),
 			checkedicon = "ui-icon-" + inputtype + "-on",
