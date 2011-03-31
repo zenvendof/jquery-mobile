@@ -685,7 +685,7 @@
 
 
 	//click routing - direct to HTTP or Ajax, accordingly
-	$( "a" ).live( "vclick", function(event) {
+	$( "a" ).live( "vclick click", function(event) {
 
 		var $this = $(this),
 
@@ -734,7 +734,7 @@
 
 		//prevent # urls from bubbling
 		//path.get() is replaced to combat abs url prefixing in IE
-		if( url.replace(path.get(), "") == "#"  ){
+		if( url.replace(path.get(), "") == "#" ){
 			//for links created purely for interaction - ignore
 			//don't call preventDefault on the event here, vclick
 			//may have been triggered by a touchend, before any moues
@@ -742,6 +742,9 @@
 			//3rd party onclick handlers get triggered. If and when
 			//a mouse click event is generated, our live("click") handler
 			//will get triggered and do the preventDefault.
+			if( event.type == "click" || event.originalEvent.type === "click" ){
+				event.preventDefault();
+			}	
 			return;
 		}
 
@@ -776,7 +779,6 @@
 
 			$.mobile.changePage( url, transition, reverse);
 		}
-		event.preventDefault();
 	});
 
 
@@ -831,10 +833,5 @@
 		}
 		});
 
-		$( "a" ).live( "click", function(event) {
-			//preventDefault for links that are purely for interaction
-			if ($(this).is("a[href='#']")){
-				event.preventDefault();
-			}
-		});
+
 })( jQuery );
