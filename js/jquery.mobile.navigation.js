@@ -729,6 +729,7 @@
 		//if there's a data-rel=back attr, go back in history
 		if( $this.is( ":jqmData(rel='back')" ) ){
 			window.history.back();
+			event.stopImmediatePropagation();
 			return false;
 		}
 
