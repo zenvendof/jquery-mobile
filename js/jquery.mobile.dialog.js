@@ -5,6 +5,13 @@
 * Note: Code is in draft form and is subject to change
 */
 ( function( $, undefined ) {
+
+//auto self-init widgets
+$( ":jqmData(role='dialog')" ).live( "pagebeforecreate", function(){
+	$( this ).dialog();
+});
+
+
 $.widget( "mobile.dialog", $.mobile.widget, {
 	options: {
 		closeBtnText: "Close"

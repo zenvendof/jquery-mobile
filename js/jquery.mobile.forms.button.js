@@ -5,6 +5,15 @@
 * http://jquery.org/license
 */ 
 (function($, undefined ) {
+
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+	$( "button, [type='button'], [type='submit'], [type='reset'], [type='image']", e.target )
+		.not( ":jqmData(role='none'), :jqmData(role='nojs')" )
+		.button();
+});
+
+
 $.widget( "mobile.button", $.mobile.widget, {
 	options: {
 		theme: null, 

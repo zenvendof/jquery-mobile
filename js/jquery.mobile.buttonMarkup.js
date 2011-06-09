@@ -131,4 +131,22 @@ var attachEvents = function() {
 	attachEvents = null;
 };
 
+
+//links in bars, or those with  data-role become buttons
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+
+	var exclude = ".ui-btn, :jqmData(role='none'), :jqmData(role='nojs')";
+
+	$( ":jqmData(role='button'), .ui-bar > a, .ui-header > a, .ui-footer > a", e.target )
+		.not( exclude )
+		.buttonMarkup();
+		
+	//links within content areas
+	$( e.target ).find( "a:not(.ui-btn):not(.ui-link-inherit)" )
+		.not( exclude )
+		.addClass( "ui-link" );	
+});
+
+
 })( jQuery );

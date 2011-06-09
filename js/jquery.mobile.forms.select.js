@@ -5,6 +5,16 @@
 * http://jquery.org/license
 */
 (function($, undefined ) {
+
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+	$( "select:not(:jqmData(role='slider'))", e.target )
+		.not( ":jqmData(role='none'), :jqmData(role='nojs')" )
+		.selectmenu();
+});
+
+
+
 $.widget( "mobile.selectmenu", $.mobile.widget, {
 	options: {
 		theme: null,

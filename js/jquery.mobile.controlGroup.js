@@ -5,6 +5,12 @@
 * http://jquery.org/license
 */
 (function($, undefined ) {
+
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+	$( ":jqmData(role='controlgroup')", e.target ).controlgroup();
+});
+
 $.fn.controlgroup = function(options){
 		
 	return this.each(function(){

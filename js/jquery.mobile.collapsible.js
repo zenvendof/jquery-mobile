@@ -5,6 +5,13 @@
 * http://jquery.org/license
 */
 ( function( $, undefined ) {
+
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+	$( "jqmData(role='collapsible')", e.target ).collapsible();
+});
+
+
 $.widget( "mobile.collapsible", $.mobile.widget, {
 	options: {
 		expandCueText: " click to expand contents",

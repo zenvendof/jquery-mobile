@@ -5,6 +5,25 @@
 * http://jquery.org/license
 */
 (function($, undefined ) {
+
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+
+	var nativeSel = ":jqmData(role='none'), :jqmData(role='nojs')";
+	
+	//degrade range back to number type
+	$( "input[type='range']:not("+ nativeSel +")", e.target ).each(function(){
+		$(this).replaceWith(
+			$( "<div>" ).html( $(this).clone() ).html()
+				.replace( /\s+type=["']?\w+['"]?/, " type=\"number\" data-" + $.mobile.ns + "role=\"slider\" " ) );
+	});				
+
+	//now self-init
+	$( ":jqmData(role='slider'):not("+ nativeSel +")", e.target ).slider();
+	
+});
+
+
 $.widget( "mobile.slider", $.mobile.widget, {
 	options: {
 		theme: null,
@@ -127,6 +146,12 @@ $.widget( "mobile.slider", $.mobile.widget, {
 			});
 
 		slider.insertAfter(control);
+		
+		//if control was an input, enhance input with textinput control
+		if( cType == "input" && $.fn.textinput ){
+			control.textinput();
+		}
+		
 
 		// NOTE force focus on handle
 		this.handle

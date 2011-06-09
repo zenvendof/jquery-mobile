@@ -5,6 +5,14 @@
 * http://jquery.org/license
 */
 (function($, undefined ) {
+
+//auto self-init widgets
+$( document ).bind( "pagecreate", function( e ){
+	$( "input[type='checkbox'],input[type='radio']", e.target )
+		.not( ":jqmData(role='none'), :jqmData(role='nojs')" )
+		.checkboxradio();
+});
+
 $.widget( "mobile.checkboxradio", $.mobile.widget, {
 	options: {
 		theme: null

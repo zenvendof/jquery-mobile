@@ -11,21 +11,6 @@ $.widget( "mobile.page", $.mobile.widget, {
 		backBtnText: "Back",
 		addBackBtn: false,
 		backBtnTheme: null,
-		degradeInputs: {
-			color: false,
-			date: false,
-			datetime: false,
-			"datetime-local": false,
-			email: false,
-			month: false,
-			number: false,
-			range: "number",
-			search: true,
-			tel: false,
-			time: false,
-			url: false,
-			week: false
-		},
 		keepNative: null
 	},
 
@@ -113,100 +98,14 @@ $.widget( "mobile.page", $.mobile.widget, {
 				case "content":
 					$this.addClass( "ui-" + role );
 					break;
-				case "collapsible":
-				case "fieldcontain":
-				case "navbar":
-				case "listview":
-				case "dialog":
-					$this[ role ]();
-					break;
 			}
 		});
-
-		//enhance form controls
-  	this._enhanceControls();
-
-		//links in bars, or those with  data-role become buttons
-		$elem.find( ":jqmData(role='button'), .ui-bar > a, .ui-header > a, .ui-footer > a" )
-			.not( ".ui-btn" )
-			.not(this.keepNative)
-			.buttonMarkup();
-
-		$elem
-			.find(":jqmData(role='controlgroup')")
-			.controlgroup();
-
-		//links within content areas
-		$elem.find( "a:not(.ui-btn):not(.ui-link-inherit)" )
-			.not(this.keepNative)
-			.addClass( "ui-link" );
 
 		//fix toolbars
 		$elem.fixHeaderFooter();
-	},
-
-	_typeAttributeRegex: /\s+type=["']?\w+['"]?/,
-
-	_enhanceControls: function() {
-		var o = this.options, self = this;
-
-		// degrade inputs to avoid poorly implemented native functionality
-		this.element.find( "input" ).not(this.keepNative).each(function() {
-			var type = this.getAttribute( "type" ),
-				optType = o.degradeInputs[ type ] || "text";
-
-			if ( o.degradeInputs[ type ] ) {
-				$( this ).replaceWith(
-					$( "<div>" ).html( $(this).clone() ).html()
-						.replace( self._typeAttributeRegex, " type=\""+ optType +"\" data-" + $.mobile.ns + "type=\""+type+"\" " ) );
-			}
-		});
-
-		// We re-find form elements since the degredation code above
-		// may have injected new elements. We cache the non-native control
-		// query to reduce the number of times we search through the entire page.
-
-		var allControls = this.element.find("input, textarea, select, button"),
-			nonNativeControls = allControls.not(this.keepNative);
-
-		// XXX: Temporary workaround for issue 785. Turn off autocorrect and
-		//      autocomplete since the popup they use can't be dismissed by
-		//      the user. Note that we test for the presence of the feature
-		//      by looking for the autocorrect property on the input element.
-
-		var textInputs = allControls.filter( "input[type=text]" );
-		if (textInputs.length && typeof textInputs[0].autocorrect !== "undefined") {
-			textInputs.each(function(){
-				// Set the attribute instead of the property just in case there
-				// is code that attempts to make modifications via HTML.
-				this.setAttribute("autocorrect", "off");
-				this.setAttribute("autocomplete", "off");
-			});
-		}
-
-		// enchance form controls
-		nonNativeControls
-			.filter( "[type='radio'], [type='checkbox']" )
-			.checkboxradio();
-
-		nonNativeControls
-			.filter( "button, [type='button'], [type='submit'], [type='reset'], [type='image']" )
-			.button();
-
-		nonNativeControls
-			.filter( "input, textarea" )
-			.not( "[type='radio'], [type='checkbox'], [type='button'], [type='submit'], [type='reset'], [type='image'], [type='hidden']" )
-			.textinput();
-
-		nonNativeControls
-			.filter( "input, select" )
-			.filter( ":jqmData(role='slider'), :jqmData(type='range')" )
-			.slider();
-
-		nonNativeControls
-			.filter( "select:not(:jqmData(role='slider'))" )
-			.selectmenu();
 	}
+
+
 });
 
 })( jQuery );
