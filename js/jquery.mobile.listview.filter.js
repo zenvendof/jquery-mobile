@@ -10,7 +10,7 @@ $.mobile.listview.prototype.options.filter = false;
 $.mobile.listview.prototype.options.filterPlaceholder = "Filter items...";
 $.mobile.listview.prototype.options.filterTheme = "c";
 
-$( ":jqmData(role='listview')" ).live( "listviewcreate", function() {
+$( ":jqmData(role='listview')" ).live( "listviewcreate enhance", function() {
 	var list = $( this ),
 		listview = list.data( "listview" );
 
