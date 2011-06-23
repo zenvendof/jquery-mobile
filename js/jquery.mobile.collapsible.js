@@ -8,7 +8,7 @@
 
 //auto self-init widgets
 $( document ).bind( "pagecreate enhance", function( e ){
-	$( "jqmData(role='collapsible')", e.target ).collapsible();
+	$( ":jqmData(role='collapsible')", e.target ).collapsible();
 });
 
 
