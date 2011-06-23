@@ -56,6 +56,9 @@
 
 		//error response message - appears when an Ajax page request fails
 		pageLoadErrorMessage: "Error Loading Page",
+		
+		//automatically initialize the DOM when it's ready
+		autoInitializePage: true,
 
 		//support conditions that must be met in order to proceed
 		//default enhanced qualifications are media query support OR IE 7+
