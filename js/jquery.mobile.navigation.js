@@ -371,8 +371,13 @@
 	}
 
 	//remove active classes after page transition or error
-	function removeActiveLinkClass( forceRemoval ) {
-		if( !!$activeClickedLink && ( !$activeClickedLink.closest( '.ui-page-active' ).length || forceRemoval ) ) {
+	function removeActiveLinkClass( forceRemoval, delay ) {
+		if ( delay ) {
+			setTimeout( function() { removeActiveLinkClass( forceRemoval ); }, delay );
+			return;
+		}
+
+		if( !!$activeClickedLink && ( forceRemoval || !$activeClickedLink.closest( '.ui-page-active' ).length  ) ) {
 			$activeClickedLink.removeClass( $.mobile.activeBtnClass );
 		}
 		$activeClickedLink = null;
@@ -582,6 +587,9 @@
 			// within the same domain as the document base, it is the site relative
 			// path. For cross-domain pages (Phone Gap only) the entire absolute Url
 			// used to load the page.
+
+
+
 			dataUrl = path.convertUrlToDataUrl( absUrl );
 
 		// Make sure we have a pageContainer to work with.
@@ -988,75 +996,37 @@
 			event.preventDefault();
 		});
 
-		//add active state on vclick
-		$( document ).bind( "vclick", function( event ) {
-			var link = findClosestLink( event.target );
-			if ( link ) {
-				if ( path.parseUrl( link.getAttribute( "href" ) || "#" ).hash !== "#" ) {
-					$( link ).closest( ".ui-btn" ).not( ".ui-disabled" ).addClass( $.mobile.activeBtnClass );
-					$( "." + $.mobile.activePageClass + " .ui-btn" ).not( link ).blur();
-				}
-			}
-		});
-
-		// click routing - direct to HTTP or Ajax, accordingly
-		$( document ).bind( $.mobile.useFastClick ? "vclick" : "click", function( event ) {
-			var link = findClosestLink( event.target );
-			if ( !link ) {
-				return;
-			}
-
-			var $link = $( link ),
-				//remove active link class if external (then it won't be there if you come back)
-				httpCleanup = function(){
-					window.setTimeout( function() { removeActiveLinkClass( true ); }, 200 );
-				};
-
-			//if there's a data-rel=back attr, go back in history
-			if( $link.is( ":jqmData(rel='back')" ) ) {
-				window.history.back();
-				return false;
-			}
-		
-			//if ajax is disabled, exit early
-			if( !$.mobile.ajaxEnabled ){
-				httpCleanup();
-				//use default click handling
-				return;
-			}
-		
-			var baseUrl = getClosestBaseUrl( $link ),
+		function getAjaxUrlForLink( $link ) {
+			var url = undefined;
+			if ( $.mobile.ajaxEnabled ) {
+				var baseUrl = getClosestBaseUrl( $link ),
 
 				//get href, if defined, otherwise default to empty hash
-				href = path.makeUrlAbsolute( $link.attr( "href" ) || "#", baseUrl );
+				url = path.makeUrlAbsolute( $link.attr( "href" ) || "#", baseUrl );
 
-			// XXX_jblas: Ideally links to application pages should be specified as
-			//            an url to the application document with a hash that is either
-			//            the site relative path or id to the page. But some of the
-			//            internal code that dynamically generates sub-pages for nested
-			//            lists and select dialogs, just write a hash in the link they
-			//            create. This means the actual URL path is based on whatever
-			//            the current value of the base tag is at the time this code
-			//            is called. For now we are just assuming that any url with a
-			//            hash in it is an application page reference.
-			if ( href.search( "#" ) != -1 ) {
-				href = href.replace( /[^#]*#/, "" );
-				if ( !href ) {
-					//link was an empty hash meant purely
-					//for interaction, so we ignore it.
-					event.preventDefault();
-					return;
-				} else if ( path.isPath( href ) ) {
-					//we have apath so make it the href we want to load.
-					href = path.makeUrlAbsolute( href, baseUrl );
-				} else {
-					//we have a simple id so use the documentUrl as its base.
-					href = path.makeUrlAbsolute( "#" + href, documentUrl.hrefNoHash );
-				}
-			}
+				// XXX_jblas: Ideally links to application pages should be specified as
+				//            an url to the application document with a hash that is either
+				//            the site relative path or id to the page. But some of the
+				//            internal code that dynamically generates sub-pages for nested
+				//            lists and select dialogs, just write a hash in the link they
+				//            create. This means the actual URL path is based on whatever
+				//            the current value of the base tag is at the time this code
+				//            is called. For now we are just assuming that any url with a
+				//            hash in it is an application page reference.
+				if ( url.search( "#" ) != -1 ) {
+					url = url.replace( /[^#]*#/, "" );
+					if ( url ) {
+						if ( path.isPath( url ) ) {
+							//we have apath so make it the href we want to load.
+							url = path.makeUrlAbsolute( href, baseUrl );
+						} else {
+							//we have a simple id so use the documentUrl as its base.
+							href = path.makeUrlAbsolute( "#" + url, documentUrl.hrefNoHash );
+						}
+					}
+ 				}
 
-				// Should we handle this link, or let the browser deal with it?
-			var useDefaultUrlHandling = $link.is( "[rel='external']" ) || $link.is( ":jqmData(ajax='false')" ) || $link.is( "[target]" ),
+				var useDefaultUrlHandling = $link.is( "[rel='external']" ) || $link.is( ":jqmData(ajax='false')" ) || $link.is( "[target]" ),
 
 				// Some embedded browsers, like the web view in Phone Gap, allow cross-domain XHR
 				// requests if the document doing the request was loaded via the file:// protocol.
@@ -1064,18 +1034,68 @@
 				// data. We normally let the browser handle external/cross-domain urls, but if the
 				// allowCrossDomainPages option is true, we will allow cross-domain http/https
 				// requests to go through our page loading logic.
-				isCrossDomainPageLoad = ( $.mobile.allowCrossDomainPages && documentUrl.protocol === "file:" && href.search( /^https?:/ ) != -1 ),
+				isCrossDomainPageLoad = ( $.mobile.allowCrossDomainPages && documentUrl.protocol === "file:" && url.search( /^https?:/ ) != -1 ),
 
 				//check for protocol or rel and its not an embedded page
 				//TODO overlap in logic from isExternal, rel=external check should be
 				//     moved into more comprehensive isExternalLink
-				isExternal = useDefaultUrlHandling || ( path.isExternal( href ) && !isCrossDomainPageLoad );
+				isExternal = useDefaultUrlHandling || ( !isCrossDomainPageLoad) && path.isExternal( url  );
+				
+				if ( isExternal ) {
+					url = undefined;
+				}
+			}
+			return url;
+		}
 
-			$activeClickedLink = $link.closest( ".ui-btn" );
+		$( document ).bind( "touchend", function( event ) {
+			var link = findClosestLink( event.target );
+			if ( link ) {
+				var url = getAjaxUrlForLink( $( link ) );
+				if ( url && url.replace( /[^#]*#/, "" ) ) {
+					event.preventDefault();
+				}
+			}
+		});
 
-			if( isExternal ) {
-				httpCleanup();
+		//add active state on vclick
+		$( document ).bind( "vclick", function( event ) {
+			var link = findClosestLink( event.target );
+			if ( link ) {
+				if ( path.parseUrl( link.getAttribute( "href" ) || "#" ).hash !== "#" ) {
+					$activeClickedLink = $( link ).closest( ".ui-btn" ).not( ".ui-disabled" ).addClass( $.mobile.activeBtnClass );
+					$( "." + $.mobile.activePageClass + " .ui-btn" ).not( link ).blur();
+				}
+			}
+		});
+
+		// click routing - direct to HTTP or Ajax, accordingly
+		$( document ).bind( "click", function( event ) {
+			var link = findClosestLink( event.target );
+			if ( !link ) {
+				return;
+			}
+
+			var $link = $( link );
+
+			//if there's a data-rel=back attr, go back in history
+			if( $link.is( ":jqmData(rel='back')" ) ) {
+				removeActiveLinkClass( true, 200 );
+				window.history.back();
+				return false;
+			}
+
+			var href = getAjaxUrlForLink( $link ),
+				hashOrUrl = href && href.replace( /[^#]*#/, "" );
+
+			if ( !href || !hashOrUrl ) {
 				//use default click handling
+				if (! hashOrUrl ) {
+					//link was an empty hash meant purely
+					//for interaction, so we ignore it.
+					event.preventDefault();
+				}
+				removeActiveLinkClass( true, 200 );
 				return;
 			}
 
