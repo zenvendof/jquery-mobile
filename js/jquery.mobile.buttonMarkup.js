@@ -136,14 +136,14 @@ var attachEvents = function() {
 //auto self-init widgets
 $( document ).bind( "pagecreate enhance", function( e ){
 
-	var exclude = ".ui-btn, :jqmData(role='none'), :jqmData(role='nojs')";
+	var exclude = ".ui-btn, :jqmData(role='none'), .ui-link-inherit, .ui-link, :jqmData(role='nojs')";
 
 	$( ":jqmData(role='button'), .ui-bar > a, .ui-header > a, .ui-footer > a", e.target )
 		.not( exclude )
 		.buttonMarkup();
 		
 	//links within content areas
-	$( e.target ).find( "a:not(.ui-btn):not(.ui-link-inherit)" )
+	$( e.target ).find( ".ui-content a" )
 		.not( exclude )
 		.addClass( "ui-link" );	
 });

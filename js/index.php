@@ -16,7 +16,6 @@ $elements = array(
 	'jquery.mobile.forms.checkboxradio.js',
 	'jquery.mobile.forms.textinput.js',
 	'jquery.mobile.forms.select.js',
-	'jquery.mobile.buttonMarkup.js',
 	'jquery.mobile.forms.button.js',
 	'jquery.mobile.forms.slider.js',
 	'jquery.mobile.collapsible.js',
@@ -27,6 +26,7 @@ $elements = array(
 	'jquery.mobile.dialog.js',
 	'jquery.mobile.navbar.js',
 	'jquery.mobile.grid.js',
+	'jquery.mobile.buttonMarkup.js',
 	'jquery.mobile.init.js'
 );
 
