@@ -168,9 +168,17 @@
 			//get path from current hash, or from a file path
 			get: function( newPath ) {
 				if( newPath === undefined ) {
-					newPath = location.hash;
+					if( $.support.pushState && !location.hash ){
+						newPath = location.href;
+					}
+					else{
+						newPath = location.hash;
+						
+					}	
 				}
-				return path.stripHash( newPath ).replace( /[^\/]*\.[^\/*]+$/, '' );
+				return path.stripHash( newPath );
+				// Todo Todo Todo: this return used to apply the following: .replace( /[^\/]*\.[^\/*]+$/, '' ).
+				// It doesn't work with pushstate, but WHY was it there???
 			},
 
 			//return the substring of a filepath before the sub-page key, for making a server request
@@ -300,7 +308,9 @@
 
 			//disable hashchange event listener internally to ignore one change
 			//toggled internally when location.hash is updated to match the url of a successful page load
-			ignoreNextHashChange: false
+			ignoreNextHashChange: false,
+			
+			ignoreNextPopState: false
 		},
 
 		//define first selector to receive focus when a page is shown
@@ -862,7 +872,8 @@
 		// for the dialog content to be used in the hash. Instead, we want
 		// to append the dialogHashKey to the url of the current page.
 		if ( isDialog && active ) {
-			url = active.url + dialogHashKey;
+			//if pushState is enabled, we only need to set the hash to the dialogkey + something random
+			url =  ( $.support.pushState ? "" : active.url ) + dialogHashKey + ( Math.random().toString().slice(2,6) );
 		}
 
 		// Set the location hash.
@@ -1113,22 +1124,44 @@
 		});
 
 		//hashchange event handler
-		$window.bind( "hashchange", function( e, triggered ) {
+		$window.bind( "hashchange popstate", function( e, triggered ) {
 			//find first page via hash
-			var to = path.stripHash( location.hash ),
+			var to = path.get(),
 				//transition is false if it's the first page, undefined otherwise (and may be overridden by default)
-				transition = $.mobile.urlHistory.stack.length === 0 ? "none" : undefined;
-
+				transition = $.mobile.urlHistory.stack.length === 0 ? "none" : undefined,
+				isDialog = urlHistory.stack.length > 1 && to.indexOf( dialogHashKey ) > -1,
+				isGeneratedPage = to.indexOf( $.mobile.subPageUrlKey ) > -1,
+				pushStateSupported = $.support.pushState,
+				currHref = location.href.split("#")[0];
+			
+			if( e.type === "hashchange" && pushStateSupported && !isDialog ){
+				if( isGeneratedPage ){
+					var splitter = '&' + $.mobile.subPageUrlKey;
+					to = to.split( splitter ).join( "#" + splitter );
+				}
+				//use replacestate to swap the hash-based url with something real
+				history.replaceState( {}, document.title, to );
+				
+				//if it worked, return here.
+				if( location.href.split("#")[0] !== currHref ){
+					return;
+				}				
+			}
+			
+			
+			
 			//if listening is disabled (either globally or temporarily), or it's a dialog hash
-			if( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) {
+			// seems this ignored hashchange stuff is unnecessary with pushstate in play
+			if( e.type === "hashchange" && !pushStateSupported && ( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) ) {
 				urlHistory.ignoreNextHashChange = false;
 				return;
 			}
+			
+			//if it's a generated subpage, like a nested list, only use the 
 
 			// special case for dialogs
-			if( urlHistory.stack.length > 1 &&
-					to.indexOf( dialogHashKey ) > -1 ) {
-
+			if( isDialog ) {
+				
 				// If current active page is not a dialog skip the dialog and continue
 				// in the same direction
 				if(!$.mobile.activePage.is( ".ui-dialog" )) {
