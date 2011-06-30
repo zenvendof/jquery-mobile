@@ -1160,7 +1160,7 @@
 				
 				//if it worked, return here.
 				if( location.href.split("#")[0] !== currHref ){
-				//	return;
+					return;
 				}				
 			}
 			
