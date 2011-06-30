@@ -310,7 +310,8 @@
 			//toggled internally when location.hash is updated to match the url of a successful page load
 			ignoreNextHashChange: false,
 			
-			ignoreNextPopState: false
+			//start with popstate disabled
+			ignoreNextPopState: true
 		},
 
 		//define first selector to receive focus when a page is shown
@@ -1122,8 +1123,17 @@
 			$.mobile.changePage( href, { transition: transition, reverse: reverse, role: role } );
 			event.preventDefault();
 		});
+		
+		
+		// Popstate is disabled until after window onload
+		// This is to avoid the initial popstate call that occurs in Chrome at load
+		$window.bind( "load", function(){
+			setTimeout(function(){
+				urlHistory.ignoreNextPopState = false;
+			}, 0 );
+		});
 
-		//hashchange event handler
+		//hashchange and popstate event handler
 		$window.bind( "hashchange popstate", function( e, triggered ) {
 			//find first page via hash
 			var to = path.get(),
@@ -1134,6 +1144,12 @@
 				pushStateSupported = $.support.pushState,
 				currHref = location.href.split("#")[0];
 			
+			//popstate is disabled until a delay after onload, due to chrome firing it on every page load
+			if( e.type == "popstate" && urlHistory.ignoreNextPopState ){
+				return;
+			}	
+			
+			//replace the hashchange if pushstate is supported!
 			if( e.type === "hashchange" && pushStateSupported && !isDialog ){
 				if( isGeneratedPage ){
 					var splitter = '&' + $.mobile.subPageUrlKey;
@@ -1144,18 +1160,18 @@
 				
 				//if it worked, return here.
 				if( location.href.split("#")[0] !== currHref ){
-					return;
+				//	return;
 				}				
 			}
 			
-			
-			
 			//if listening is disabled (either globally or temporarily), or it's a dialog hash
-			// seems this ignored hashchange stuff is unnecessary with pushstate in play
-			if( e.type === "hashchange" && !pushStateSupported && ( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) ) {
+			if( e.type === "hashchange" && ( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) ) {
 				urlHistory.ignoreNextHashChange = false;
 				return;
 			}
+		
+			
+			
 			
 			//if it's a generated subpage, like a nested list, only use the 
 
