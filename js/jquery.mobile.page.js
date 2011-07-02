@@ -27,7 +27,8 @@ $.widget( "mobile.page", $.mobile.widget, {
 			url: false,
 			week: false
 		},
-		keepNative: null
+		keepNative: null,
+		ajaxDomCaching: false
 	},
 
 	_create: function() {

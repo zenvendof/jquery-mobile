@@ -205,7 +205,8 @@ $.widget( "mobile.listview", $.mobile.widget, {
 			o = this.options,
 			dns = "data-" + $.mobile.ns,
 			self = this,
-			persistentFooterID = parentPage.find( ":jqmData(role='footer')" ).jqmData( "id" );
+			persistentFooterID = parentPage.find( ":jqmData(role='footer')" ).jqmData( "id" ),
+			hasSubPages;
 
 		if ( typeof listCountPerPage[ parentId ] === "undefined" ) {
 			listCountPerPage[ parentId ] = -1;
@@ -213,7 +214,11 @@ $.widget( "mobile.listview", $.mobile.widget, {
 
 		parentListId = parentListId || ++listCountPerPage[ parentId ];
 
-		$( parentList.find( "li>ul, li>ol" ).toArray().reverse() ).each(function( i ) {
+		$( parentList.find( "li>ul, li>ol" ).toArray().reverse() ).each(function( i ) {	
+			
+			//define hasSubPages for use in later removal
+			hasSubPages = true;
+			
 			var list = $( this ),
 				listId = list.attr( "id" ) || parentListId + "-" + i,
 				parent = list.parent(),
@@ -245,6 +250,22 @@ $.widget( "mobile.listview", $.mobile.widget, {
 			anchor.attr( "href", "#" + id );
 
 		}).listview();
+		
+		//on pagehide, remove any nested pages along with the parent page, as long as they aren't active
+		if( hasSubPages && parentPage.jqmData("page").options.ajaxDomCaching === false ){
+			parentPage
+				.bind( "pagehide.remove", function( e, ui ){
+					var nextPage = ui.nextPage,
+						npURL;
+					
+					if( ui.nextPage ){
+						npURL = nextPage.jqmData( "url" );
+						if( npURL.indexOf( parentUrl + "&" + $.mobile.subPageUrlKey ) !== 0 ){
+							$( ":jqmData(url^='"+  parentUrl + "&" + $.mobile.subPageUrlKey +"')").remove();
+						}
+					}
+				});
+		}
 	}
 });
 
