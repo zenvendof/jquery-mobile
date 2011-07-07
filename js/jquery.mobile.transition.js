@@ -32,7 +32,7 @@ $.fn.jqmTransition = function( classes, callback, timeout ) {
 			$this.removeClass( "animate " + classes );
 			return result;
 		};
-		$this.one( "transitionend webkitTransitionEnd OTransitionEnd", handler );
+		$this.one( "transitionend webkitTransitionEnd oTransitionEnd", handler );
 		if ( timeout ) {
 			fallbackTimeout = setTimeout( handler, timeout );
 		}

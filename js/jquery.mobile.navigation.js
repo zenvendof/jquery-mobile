@@ -485,7 +485,7 @@
 	//animation complete callback
 	$.fn.animationComplete = function( callback ) {
 		if( $.support.cssTransitions ) {
-			return $( this ).one( "transitionend webkitTransitionEnd OTransitionEnd", callback );
+			return $( this ).one( "transitionend webkitTransitionEnd oTransitionEnd", callback );
 		}
 		else{
 			// defer execution for consistency between webkit/non webkit
