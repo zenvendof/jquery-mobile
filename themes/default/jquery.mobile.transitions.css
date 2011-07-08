@@ -29,10 +29,11 @@ Built by David Kaneda and maintained by Jonathan Stark.
 	transition-duration: 350ms;
 }
 
-.animate,
-.animate,
-.animate {
-	-webkit-transform-property: transform;
+.slide.animate,
+.slideup.animate,
+.slidedown.animate {
+	-webkit-transition-property: transform;
+	-o-transition-property: transform;
 	transition-property: transform;
 }
 
@@ -118,7 +119,8 @@ Built by David Kaneda and maintained by Jonathan Stark.
 }
 
 .fade.animate {
-	-webkit-transform-property: opacity;
+	-webkit-transition-property: opacity;
+	-o-transition-property: opacity;
     transition-property: opacity;
 }
 
