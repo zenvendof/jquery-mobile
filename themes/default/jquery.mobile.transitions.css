@@ -29,97 +29,78 @@ Built by David Kaneda and maintained by Jonathan Stark.
 	transition-duration: 350ms;
 }
 
-.slide.animate,
-.slideup.animate,
-.slidedown.animate {
-	-webkit-transition-property: transform;
-	-o-transition-property: transform;
-	transition-property: transform;
+.slide.animate {
+	-webkit-transition-property: margin-left;
+	-moz-transition-property: margin-left;
+	-o-transition-property: margin-left;
+	transition-property: margin-left;
 }
 
 .slide.in,
 .slide.out.reverse.animate {
-	-webkit-transform: translateX(100%);
-	-moz-transform: translateX(100%);
-	-o-transform: translateX(100%);
-	transform: translateX(100%);
+	margin-left: 100%;
 }
 
 .slide.in.animate,
 .slide.in.reverse.animate,
 .slide.out { 
-	-webkit-transform: translateX(0);
-	-moz-transform: translateX(0);
-	-o-transform: translateX(0);
-	transform: translateX(0);
+	margin-left: 0;
 }
 
 .slide.in.reverse,
 .slide.out.animate { 
-	-webkit-transform: translateX(-100%);
-	-moz-transform: translateX(-100%);
-	-o-transform: translateX(-100%);
-    transform: translateX(-100%);
+	margin-left: -100%;
+}
+
+.slideup.animate,
+.slidedown.animate {
+	-webkit-transition-property: margin-top;
+	-moz-transition-property: margin-top;
+	-o-transition-property: margin-top;
+	transition-property: margin-top;
 }
 
 .slideup.in,
 .slideup.out.reverse.animate {
-	-webkit-transform: translateY(100%);
-	-moz-transform: translateY(100%);
-	-o-transform: translateY(100%);
-	transform: translateY(100%);
+	margin-top: 100%;
 	z-index: 10;
 }
 
 .slideup.in.animate,
 .slideup.in.reverse.animate,
 .slideup.out {
-	-webkit-transform: translateY(0);
-	-moz-transform: translateY(0);
-	-o-transform: translateY(0);
-	transform: translateY(0);
+	margin-top: 0;
 	z-index: 10;
 }
 
 .slideup.in.reverse,
 .slideup.out.animate {
-	-webkit-transform: translateY(-100%);
-	-moz-transform: translateY(-100%);
-	-o-transform: translateY(-100%);
-    transform: translateY(-100%);
+	margin-top: -100%;
 	z-index: 0;
 }
 
 .slidedown.in,
 .slidedown.out.reverse.animate {
-	-webkit-transform: translateY(-100%);
-	-moz-transform: translateY(-100%);
-	-o-transform: translateY(-100%);
-	transform: translateY(-100%);
+	margin-top: -100%;
 	z-index: 10;
 }
 
 .slidedown.in.animate,
 .slidedown.in.reverse.animate,
 .slidedown.out {
-	-webkit-transform: translateY(0);
-	-moz-transform: translateY(0);
-	-o-transform: translateY(0);
-	transform: translateY(0);
+	margin-top: 0;
 	z-index: 10;
 }
 
 .slidedown.in.reverse,
 .slidedown.out.animate {
-	-webkit-transform: translateY(100%);
-	-moz-transform: translateY(100%);
-	-o-transform: translateY(100%);
-    transform: translateY(100%);
+	margin-top: 100%;
 	z-index: 0;
 }
 
 .fade.animate {
 	-webkit-transition-property: opacity;
+	-moz-transition-property: opacity;
 	-o-transition-property: opacity;
     transition-property: opacity;
 }
@@ -183,12 +164,16 @@ Built by David Kaneda and maintained by Jonathan Stark.
 }
 
 .pop.animate {
-	-webkit-transform-property: scale, opacity;
-    transition-property: scale, opacity;
+	-webkit-transition-property: -webkit-transform, opacity;
+	-moz-transition-property: -moz-transform, opacity;
+	-o-transition-property: -o-transform, opacity;
+    transition-property: transform, opacity;
 }
 
 .pop {
 	-webkit-transform-origin: 50% 50%;
+	-moz-transform-origin: 50% 50%;
+	-o-transform-origin: 50% 50%;
 	transform-origin: 50% 50%;
 }
 
@@ -196,6 +181,7 @@ Built by David Kaneda and maintained by Jonathan Stark.
 .pop.out.reverse.animate {
 	-webkit-transform: scale(.2);
 	-moz-transform: scale(.2);
+	-o-transform: scale(.2);
 	transform: scale(.2);
 	opacity: 0;
 	z-index: 10;
@@ -205,7 +191,12 @@ Built by David Kaneda and maintained by Jonathan Stark.
 .pop.in.animate {
 	-webkit-transform: scale(1.0);
 	-moz-transform: scale(1.0);
+	-o-transform: scale(1.0);
 	transform: scale(1.0);
     opacity: 1;
 	z-index: 10;
+}
+
+@-o-viewport {
+	min-zoom: 1;
 }
