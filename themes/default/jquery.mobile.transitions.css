@@ -112,9 +112,9 @@
 
 .fade.animate {
 	-webkit-transition-property: opacity;
-	-moz-transition-property: opacity;
-	-o-transition-property: opacity;
-    transition-property: opacity;
+	   -moz-transition-property: opacity;
+	     -o-transition-property: opacity;
+            transition-property: opacity;
 }
 
 .fade.in,
@@ -177,24 +177,24 @@
 
 .pop.animate {
 	-webkit-transition-property: -webkit-transform, opacity;
-	-moz-transition-property: -moz-transform, opacity;
-	-o-transition-property: -o-transform, opacity;
-    transition-property: transform, opacity;
+	   -moz-transition-property:    -moz-transform, opacity;
+	     -o-transition-property:      -o-transform, opacity;
+            transition-property:         transform, opacity;
 }
 
 .pop {
 	-webkit-transform-origin: 50% 50%;
-	-moz-transform-origin: 50% 50%;
-	-o-transform-origin: 50% 50%;
-	transform-origin: 50% 50%;
+	   -moz-transform-origin: 50% 50%;
+	     -o-transform-origin: 50% 50%;
+	        transform-origin: 50% 50%;
 }
 
 .pop.in,
 .pop.out.reverse.animate {
 	-webkit-transform: scale(.2);
-	-moz-transform: scale(.2);
-	-o-transform: scale(.2);
-	transform: scale(.2);
+	   -moz-transform: scale(.2);
+	     -o-transform: scale(.2);
+	        transform: scale(.2);
 	opacity: 0;
 	z-index: 10;
 }
