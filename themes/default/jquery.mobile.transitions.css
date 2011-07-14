@@ -15,90 +15,98 @@
   	to {-webkit-transform: rotate(360deg);}
 }
 
-/* Transitions from jQtouch (with small modifications): http://www.jqtouch.com/
-Built by David Kaneda and maintained by Jonathan Stark.
-*/
 .in, .out {
-	-webkit-transition-timing-function: ease-in-out;
-	-webkit-transition-duration: 350ms;
-	-o-transition-timing-function: ease-in-out;
-	-o-transition-duration: 350ms;
-	-moz-transition-timing-function: ease-in-out;
-	-moz-transition-duration: 350ms;
-	transition-timing-function: ease-in-out;
-	transition-duration: 350ms;
+	-webkit-transition: 350ms ease-in-out;
+	   -moz-transition: 350ms ease-in-out;
+	     -o-transition: 350ms ease-in-out;
+	        transition: 350ms ease-in-out;
 }
 
-.animate {
-	-webkit-transform: translateZ(0);
-}
-
-.slide.animate {
-	-webkit-transition-property: margin-left;
-	-moz-transition-property: margin-left;
-	-o-transition-property: margin-left;
-	transition-property: margin-left;
+.slide.animate,
+.slideup.animate,
+.slidedown.animate {
+	-webkit-transition-property: -webkit-transform;
+	   -moz-transition-property:    -moz-transform;
+	     -o-transition-property:      -o-transform;
+	        transition-property:         transform;
 }
 
 .slide.in,
 .slide.out.reverse.animate {
-	margin-left: 100%;
+	-webkit-transform: translateX(100%);
+	   -moz-transform: translateX(100%);
+	     -o-transform: translateX(100%);
+			transform: translateX(100%);
 }
 
 .slide.in.animate,
 .slide.in.reverse.animate,
 .slide.out { 
-	margin-left: 0;
+	-webkit-transform: translateX(0);
+	   -moz-transform: translateX(0);
+	     -o-transform: translateX(0);
+			transform: translateX(0);
 }
 
 .slide.in.reverse,
 .slide.out.animate { 
-	margin-left: -100%;
+	-webkit-transform: translateX(-100%);
+	   -moz-transform: translateX(-100%);
+	     -o-transform: translateX(-100%);
+			transform: translateX(-100%);
 }
 
-.slideup.animate,
-.slidedown.animate {
-	-webkit-transition-property: margin-top;
-	-moz-transition-property: margin-top;
-	-o-transition-property: margin-top;
-	transition-property: margin-top;
-}
-
+.slidedown.in.reverse,
+.slidedown.out.animate,
 .slideup.in,
 .slideup.out.reverse.animate {
-	margin-top: 100%;
+	-webkit-transform: translateY(100%);
+	   -moz-transform: translateY(100%);
+	     -o-transform: translateY(100%);
+			transform: translateY(100%);
+
 	z-index: 10;
 }
 
+.slidedown.in.animate,
+.slidedown.in.reverse.animate,
+.slidedown.out,
 .slideup.in.animate,
 .slideup.in.reverse.animate,
 .slideup.out {
-	margin-top: 0;
+	-webkit-transform: translateY(0);
+	   -moz-transform: translateY(0);
+	     -o-transform: translateY(0);
+			transform: translateY(0);
+
 	z-index: 10;
 }
 
+.slidedown.in,
+.slidedown.out.reverse.animate,
 .slideup.in.reverse,
 .slideup.out.animate {
-	margin-top: -100%;
+	-webkit-transform: translateY(-100%);
+	   -moz-transform: translateY(-100%);
+	     -o-transform: translateY(-100%);
+			transform: translateY(-100%);
+
 	z-index: 0;
 }
 
 .slidedown.in,
 .slidedown.out.reverse.animate {
-	margin-top: -100%;
 	z-index: 10;
 }
 
 .slidedown.in.animate,
 .slidedown.in.reverse.animate,
 .slidedown.out {
-	margin-top: 0;
 	z-index: 10;
 }
 
 .slidedown.in.reverse,
 .slidedown.out.animate {
-	margin-top: 100%;
 	z-index: 0;
 }
 
