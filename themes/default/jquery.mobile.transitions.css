@@ -202,9 +202,9 @@
 .pop.out,
 .pop.in.animate {
 	-webkit-transform: scale(1.0);
-	-moz-transform: scale(1.0);
-	-o-transform: scale(1.0);
-	transform: scale(1.0);
+	   -moz-transform: scale(1.0);
+	     -o-transform: scale(1.0);
+	        transform: scale(1.0);
     opacity: 1;
 	z-index: 10;
 }
