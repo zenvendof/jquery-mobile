@@ -29,6 +29,10 @@ Built by David Kaneda and maintained by Jonathan Stark.
 	transition-duration: 350ms;
 }
 
+.animate {
+	-webkit-transform: translateZ(0);
+}
+
 .slide.animate {
 	-webkit-transition-property: margin-left;
 	-moz-transition-property: margin-left;
