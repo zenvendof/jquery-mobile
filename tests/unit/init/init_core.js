@@ -1,229 +1,171 @@
 /*
  * mobile init tests
  */
-(function($){
-	var mobilePage = undefined,
-			libName = 'jquery.mobile.init.js',
-			coreLib = 'jquery.mobile.core.js',
+QUnit.stop();
+
+define([
+	"jquery",
+	"jquery.mobile",
+	"./shared",
+	"./prepare"
+], function( $, jqm, shared ){
+	require( [
+		"init"
+	], function() {
+		var libName = 'init',
+			coreLib = 'core',
 			extendFn = $.extend,
 			setGradeA = function(value) { $.mobile.gradeA = function(){ return value; }; },
 			reloadCoreNSandInit = function(){
-				$.testHelper.reloadLib(coreLib);
-				$.testHelper.reloadLib("jquery.setNamespace.js");
-				$.testHelper.reloadLib(libName);
+				$.testHelper.reloadLib("jquery.setNameSpace.js");
+				return $.when( $.testHelper.reloadModule( coreLib ), $.testHelper.reloadModule( libName ))
 			};
 
 
-	module(libName, {
-		setup: function(){
-			// NOTE reset for gradeA tests
-			$('html').removeClass('ui-mobile');
+		QUnit.start();
 
-			// TODO add post reload callback
-			$('.ui-loader').remove();
-		},
-		teardown: function(){
-			$.extend = extendFn;
+		module(libName, {
+			setup: function(){
+				$.mobile.ns = shared.ns;
+				// NOTE reset for gradeA tests
+				$('html').removeClass('ui-mobile');
+			},
 
-			// NOTE reset for pageLoading tests
-			$('.ui-loader').remove();
+			teardown: function(){
+				$.extend = extendFn;
 
-			// clear the classes added by reloading the init
-			$("html").attr('class', '');
-		}
-	});
+				// clear the classes added by reloading the init
+				$("html").attr('class', '');
+			}
+		});
 
-	// NOTE important to use $.fn.one here to make sure library reloads don't fire
-	//      the event before the test check below
-	$(document).one("mobileinit", function(){
-		mobilePage = $.mobile.page;
-	});
+		// NOTE for the following two tests see index html for the binding
+		test( "mobile.page is available when mobile init is fired", function(){
+			ok( shared.page !== undefined, "$.mobile.page is defined" );
+		});
 
-	// NOTE for the following two tests see index html for the binding
-	test( "mobile.page is available when mobile init is fired", function(){
-		ok( mobilePage !== undefined, "$.mobile.page is defined" );
-	});
+		$.testHelper.excludeFileProtocol(function(){
+			asyncTest( "loading the init library triggers mobilinit on the document", function(){
+				var initFired = false;
+				expect( 1 );
 
-	$.testHelper.excludeFileProtocol(function(){
-		asyncTest( "loading the init library triggers mobilinit on the document", function(){
-			var initFired = false;
-			expect( 1 );
+				$(window.document).one('mobileinit', function(event){
+					initFired = true;
+				});
 
-			$(window.document).one('mobileinit', function(event){
-				initFired = true;
+				$.testHelper.reloadModule( libName ).then(function() {
+					ok(initFired, "init fired");
+				}).then( start );
 			});
 
-			$.testHelper.reloadLib(libName);
+			asyncTest( "enhancements are skipped when the browser is not grade A", function(){
+				setGradeA(false);
+				$.testHelper.reloadModule( libName ).then(function() {
+					//NOTE easiest way to check for enhancements, not the most obvious
+					ok( !$( "html" ).hasClass( "ui-mobile" ), "html elem doesn't have class ui-mobile" );
+				}).then( start );
 
-			setTimeout(function(){
-				ok(initFired, "init fired");
-				start();
-			}, 1000);
-		});
-
-		test( "enhancments are skipped when the browser is not grade A", function(){
-			setGradeA(false);
-			$.testHelper.reloadLib(libName);
-
-			//NOTE easiest way to check for enhancements, not the most obvious
-			ok(!$("html").hasClass("ui-mobile"), "html elem doesn't have class ui-mobile");
-		});
-
-		test( "enhancments are added when the browser is grade A", function(){
-			setGradeA(true);
-			$.testHelper.reloadLib(libName);
-
-			ok($("html").hasClass("ui-mobile"), "html elem has class mobile");
-		});
-
-		asyncTest( "useFastClick is configurable via mobileinit", function(){
-			$(document).one( "mobileinit", function(){
-				$.mobile.useFastClick = false;
-				start();
 			});
 
-			$.testHelper.reloadLib(libName);
+			asyncTest( "enhancements are added when the browser is grade A", function(){
+				expect( 1 );
+				setGradeA(true);
+				$.testHelper.reloadModule( libName ).then(
+					function() {
+						ok( $("html").hasClass("ui-mobile"), "html elem has class mobile");
+					}
+				).then( start );
+			});
 
-			same( $.mobile.useFastClick, false , "fast click is set to false after init" );
-			$.mobile.useFastClick = true;
+			var findFirstPage = function() {
+				return $( ":jqmData(role='page')" ).first();
+			};
+
+			asyncTest( "active page and start page should be set to the fist page in the selected set", function(){
+				expect( 2 );
+				$.testHelper.reloadModule( libName ).then(
+					function() {
+						var firstPage = findFirstPage();
+
+						deepEqual($.mobile.firstPage[0], firstPage[0]);
+						deepEqual($.mobile.activePage[0], firstPage[0]);
+					}
+				).then( start );
+			});
+
+			asyncTest( "mobile viewport class is defined on the first page's parent", function(){
+				expect( 1 );
+				$.testHelper.reloadModule( libName ).then(
+					function() {
+						var firstPage = findFirstPage();
+
+						ok(firstPage.parent().hasClass("ui-mobile-viewport"), "first page has viewport");
+					}
+				).then( start );
+			});
+
+			asyncTest( "mobile page container is the first page's parent", function(){
+				expect( 1 );
+				$.testHelper.reloadModule( libName ).then(
+					function() {
+						var firstPage = findFirstPage();
+
+						deepEqual($.mobile.pageContainer[0], firstPage.parent()[0]);
+					}
+				).then( start );
+			});
+
+			test( "pages without a data-url attribute have it set to their id", function(){
+				deepEqual($("#foo").jqmData('url'), "foo");
+			});
+
+			test( "pages with a data-url attribute are left with the original value", function(){
+				deepEqual($("#bar").jqmData('url'), "bak");
+			});
+
+			// NOTE the next two tests work on timeouts that assume a page will be
+			// created within 2 seconds it'd be great to get these using a more
+			// reliable callback or event
+			asyncTest( "page does auto-initialize at domready when autoinitialize option is true (default) ", function(){
+
+				$( "<div />", { "data-nstest-role": "page", "id": "autoinit-on" } ).prependTo( "body" );
+
+				$(document).one("mobileinit", function(){
+					$.mobile.autoInitializePage = true;
+				});
+
+				location.hash = "";
+
+				reloadCoreNSandInit().then(
+					function() {
+						deepEqual( $( "#autoinit-on.ui-page" ).length, 1 );
+					}
+				).then( start );
+			});
+
+
+			asyncTest( "page does not initialize at domready when autoinitialize option is false ", function(){
+				$(document).one("mobileinit", function(){
+					$.mobile.autoInitializePage = false;
+				});
+
+				$( "<div />", { "data-nstest-role": "page", "id": "autoinit-off" } ).prependTo( "body" );
+
+				location.hash = "";
+
+
+				reloadCoreNSandInit().then(
+					function() {
+						deepEqual( $( "#autoinit-off.ui-page" ).length, 0 );
+
+						$(document).bind("mobileinit", function(){
+							$.mobile.autoInitializePage = true;
+						});
+
+						return reloadCoreNSandInit();
+					}
+				).then( start );
+			});
 		});
-
-
-
-		var findFirstPage = function() {
-			return $(":jqmData(role='page')").first();
-		};
-
-		test( "active page and start page should be set to the fist page in the selected set", function(){
-			expect( 2 );
-			$.testHelper.reloadLib(libName);
-			var firstPage = findFirstPage();
-
-			same($.mobile.firstPage[0], firstPage[0]);
-			same($.mobile.activePage[0], firstPage[0]);
-		});
-
-		test( "mobile viewport class is defined on the first page's parent", function(){
-			expect( 1 );
-			$.testHelper.reloadLib(libName);
-			var firstPage = findFirstPage();
-
-			ok(firstPage.parent().hasClass("ui-mobile-viewport"), "first page has viewport");
-		});
-
-		test( "mobile page container is the first page's parent", function(){
-			expect( 1 );
-			$.testHelper.reloadLib(libName);
-			var firstPage = findFirstPage();
-
-			same($.mobile.pageContainer[0], firstPage.parent()[0]);
-		});
-
-		asyncTest( "hashchange triggered on document ready with single argument: true", function(){
-			$.testHelper.sequence([
-				function(){
-					location.hash = "#foo";
-				},
-
-				// delay the bind until the first hashchange
-				function(){
-					$(window).one("hashchange", function(ev, arg){
-						same(arg, true);
-						start();
-					});
-				},
-
-				function(){
-					$.testHelper.reloadLib(libName);
-				}
-			], 1000);
-		});
-
-		test( "pages without a data-url attribute have it set to their id", function(){
-			same($("#foo").jqmData('url'), "foo");
-		});
-
-		test( "pages with a data-url attribute are left with the original value", function(){
-			same($("#bar").jqmData('url'), "bak");
-		});
-
-		asyncTest( "pageLoading doesn't add the dialog to the page when loading message is false", function(){
-			expect( 1 );
-			$.mobile.loadingMessage = false;
-			$.mobile.pageLoading(false);
-
-			setTimeout(function(){
-				ok(!$(".ui-loader").length, "no ui-loader element");
-				start();
-			}, 500);
-		});
-
-		asyncTest( "pageLoading doesn't add the dialog to the page when done is passed as true", function(){
-			expect( 1 );
-			$.mobile.loadingMessage = true;
-			$.mobile.pageLoading(true);
-
-			setTimeout(function(){
-				same($(".ui-loading").length, 0, "page should not be in the loading state");
-				start();
-			}, 500);
-		});
-
-		asyncTest( "pageLoading adds the dialog to the page when done is true", function(){
-			expect( 1 );
-			$.mobile.loadingMessage = true;
-			$.mobile.pageLoading(false);
-
-			setTimeout(function(){
-				same($(".ui-loading").length, 1, "page should be in the loading state");
-				start();
-			}, 500);
-		});
-
-		asyncTest( "page loading should contain default loading message", function(){
-			expect( 1 );
-			reloadCoreNSandInit();
-			$.mobile.pageLoading(false);
-
-			setTimeout(function(){
-				same($(".ui-loader h1").text(), "loading");
-				start();
-			}, 500);
-		});
-
-		asyncTest( "page loading should contain custom loading message", function(){
-			$.mobile.loadingMessage = "foo";
-			$.testHelper.reloadLib(libName);
-			$.mobile.pageLoading(false);
-
-			setTimeout(function(){
-				same($(".ui-loader h1").text(), "foo");
-				start();
-			}, 500);
-		});
-		
-		asyncTest( "page loading should contain custom loading message when set during runtime", function(){
-			$.mobile.loadingMessage = "bar";
-			$.mobile.pageLoading(false);
-
-			setTimeout(function(){
-				same($(".ui-loader h1").text(), "bar");
-				start();
-			}, 500);
-		});
-
-		
-		asyncTest( "page element is generated when not present in ajax'd markup", function(){
-			expect( 1 );
-			$.mobile.changePage( "nopage.html" );
-			
-			$( ":jqmData(url$='nopage.html')" ).live( "pagecreate", function(){
-					ok(true, "page was created from dynamically loaded HTML that contained no page div" );
-					start();
-			} );
-		});
-		
-		
-		
 	});
-})(jQuery);
+});
